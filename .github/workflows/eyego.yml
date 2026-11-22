@@ -10,7 +10,8 @@ on:
       run:
         description: Which scenario brief (briefs/eyego-<run>.md)
         type: choice
-        options: [core-ride, things-wrong, group]   # money, profile-sweep: briefs come later
+        # smoke = launch both apps + collect logs/crashes, no agent (no Claude usage)
+        options: [core-ride, things-wrong, group, smoke]   # money, profile-sweep: briefs come later
         default: core-ride
       model:
         description: opus or sonnet
