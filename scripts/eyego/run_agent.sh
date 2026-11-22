@@ -57,7 +57,12 @@ collect_crashes() {
 # smoke: launch both apps, look, collect logs. No agent, no Claude usage.
 if [ "$RUN" = smoke ]; then
   sleep 50
-  for w in rider driver; do bash scripts/eyego/phone.sh $w screen 01 >/dev/null 2>&1; bash scripts/eyego/phone.sh $w relaunch; sleep 20; bash scripts/eyego/phone.sh $w screen 02 >/dev/null 2>&1; done
+  for w in rider driver; do
+    bash scripts/eyego/phone.sh $w screen 01 >/dev/null 2>&1 || echo "screen $w 01 failed"
+    u=$(cat "$EYEGO_TMP/udid_$w"); xcrun simctl terminate "$u" "com.eyego.$w" 2>/dev/null
+    launch "$u" "com.eyego.$w" || echo "$w relaunch timed out"; sleep 20
+    bash scripts/eyego/phone.sh $w screen 02 >/dev/null 2>&1 || echo "screen $w 02 failed"
+  done
   collect_crashes; exit 0
 fi
 

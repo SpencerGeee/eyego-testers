@@ -80,6 +80,12 @@ jobs:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: EYEGO_TMP="$RUNNER_TEMP/eyego" && mkdir -p "$EYEGO_TMP" && EYEGO_TMP="$EYEGO_TMP" bash scripts/eyego/run_agent.sh
+      - name: Collect crash reports
+        if: always()
+        run: |
+          mkdir -p "results/$RUN/crashes"
+          find ~/Library/Logs/DiagnosticReports -name 'EyeGo*.ips' -exec cp {} "results/$RUN/crashes/" \; 2>/dev/null || true
+          echo "crash reports: $(find "results/$RUN/crashes" -name '*.ips' | wc -l)"
       - name: Encrypt results
         if: always()
         run: bash scripts/encrypt_results.sh "eyego-$RUN"
