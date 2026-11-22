@@ -42,7 +42,11 @@ boot() {  # boot <who> <model> <lat,lng>
   fi
 }
 launch() {  # simctl launch with a 60 s limit (it can hang forever)
-  xcrun simctl launch "$1" "$2" & local p=$!
+  # The app's stdout/stderr go to results/: an uncaught JS error in a worklet is
+  # printed there as "terminating due to uncaught exception ... JSError: <message>"
+  # before the abort, which the .ips crash report never contains.
+  local who=${2##*.}
+  xcrun simctl launch --stdout="$PWD/results/$RUN/$who-stdout-$(date +%H%M%S).txt" --stderr="$PWD/results/$RUN/$who-stderr-$(date +%H%M%S).txt" "$1" "$2" & local p=$!
   for _ in $(seq 1 60); do kill -0 "$p" 2>/dev/null || { wait "$p"; return; }; sleep 1; done
   kill "$p" 2>/dev/null; return 1
 }
