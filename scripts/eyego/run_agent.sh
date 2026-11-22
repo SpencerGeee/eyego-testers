@@ -17,6 +17,10 @@ boot() {  # boot <who> <model> <lat,lng>
   for k in DidShowContinuousPathIntroduction KeyboardDidShowProductivityTutorial DidShowGestureKeyboardIntroduction; do
     d com.apple.Preferences $k -bool YES; d com.apple.keyboard.preferences $k -bool YES
   done
+  # Rider: Reduce Motion ON. The full-motion onboarding crashes on its first
+  # slide change (finding #1, 2026-11-22); this takes the app's reduced path so
+  # the rest of the app can be tested. Set REDUCE_MOTION_RIDER=0 to test the fix.
+  [ "$who" = rider ] && [ "${REDUCE_MOTION_RIDER:-1}" = 1 ] && d com.apple.Accessibility ReduceMotionEnabled -bool YES
   xcrun simctl shutdown "$udid" && xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
   local app signed; app=$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)
   # The build is unsigned; an unsigned simulator app gets no Keychain (SecureStore
@@ -32,14 +36,14 @@ boot() {  # boot <who> <model> <lat,lng>
   xcrun simctl install "$udid" "$signed" || { echo "install $who failed"; exit 1; }
   if launch "$udid" "com.eyego.$who"; then echo "$who: ad-hoc signed build launched" | tee -a "results/$RUN/launch.txt"
   else
-    echo "$who: signed build did not launch in 30 s -> unsigned original" | tee -a "results/$RUN/launch.txt"
+    echo "$who: signed build did not launch in 60 s -> unsigned original" | tee -a "results/$RUN/launch.txt"
     xcrun simctl uninstall "$udid" "com.eyego.$who"; xcrun simctl install "$udid" "$app"
     launch "$udid" "com.eyego.$who" || echo "$who: unsigned launch also timed out" | tee -a "results/$RUN/launch.txt"
   fi
 }
-launch() {  # simctl launch with a 30 s limit (it can hang forever)
+launch() {  # simctl launch with a 60 s limit (it can hang forever)
   xcrun simctl launch "$1" "$2" & local p=$!
-  for _ in $(seq 1 30); do kill -0 "$p" 2>/dev/null || { wait "$p"; return; }; sleep 1; done
+  for _ in $(seq 1 60); do kill -0 "$p" 2>/dev/null || { wait "$p"; return; }; sleep 1; done
   kill "$p" 2>/dev/null; return 1
 }
 # Accra. Rider at Accra Mall, driver ~1.2 km away on the Spintex road side.
@@ -57,6 +61,11 @@ collect_crashes() {
 # smoke: launch both apps, look, collect logs. No agent, no Claude usage.
 if [ "$RUN" = smoke ]; then
   sleep 50
+  # Rider: page through the onboarding by hand (Reduce Motion = no autoplay).
+  for _ in 1 2 3 4 5; do bash scripts/eyego/phone.sh rider swipe 330 330 40 330 >/dev/null 2>&1; sleep 3; done
+  xcrun simctl spawn "$(cat "$EYEGO_TMP/udid_rider")" launchctl list | grep -q com.eyego.rider \
+    && echo "rider: alive after paging the onboarding" | tee -a "results/$RUN/launch.txt" \
+    || echo "rider: DEAD after paging the onboarding" | tee -a "results/$RUN/launch.txt"
   for w in rider driver; do
     bash scripts/eyego/phone.sh $w screen 01 >/dev/null 2>&1 || echo "screen $w 01 failed"
     u=$(cat "$EYEGO_TMP/udid_$w"); xcrun simctl terminate "$u" "com.eyego.$w" 2>/dev/null

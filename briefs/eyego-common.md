@@ -39,6 +39,12 @@ Number screenshots per phone in order (01, 02...). Read every screenshot before 
 - Move the driver with `drive`, at road speed, toward the pickup and then the destination, so the
   rider phone shows a moving vehicle and a changing ETA. Teleporting is for setting up, not for trips.
 
+## Known blocker, already filed (do not spend time on it)
+The rider app crashes on a fresh install when the onboarding carousel changes slide with full
+motion. The rider phone therefore has iOS **Reduce Motion ON**, so the app uses its reduced
+onboarding. Swipe through all onboarding slides once by hand: if it still crashes, write that
+down (it narrows the cause), `open` the app again and carry on. Everything else is under test.
+
 ## This test build (do not report these as bugs)
 - Payments run on a mock gateway: MoMo is accepted automatically. A card checkout opens a dead
   `example.invalid` page on purpose. **Do** report what the app does when you close that page
