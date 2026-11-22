@@ -43,6 +43,10 @@ Number screenshots per phone in order (01, 02...). Read every screenshot before 
 - Payments run on a mock gateway: MoMo is accepted automatically. A card checkout opens a dead
   `example.invalid` page on purpose. **Do** report what the app does when you close that page
   (stuck spinner, fake "paid", lost trip = bug).
+- Photo/file uploads (profile photo, dispute or lost-item photos, chat images) have no storage
+  account in this build, so the upload itself fails. Do not report that. **Do** report how the app
+  handles it: a clear error and a way to continue = fine; a spinner forever, a silent "saved", a
+  crash, or a form that cannot be submitted without the photo = bug.
 - No real SMS and no push notifications (simulator). In-app banners and screens still must update.
 - Backend is a fresh local server; it is fast. Slowness of more than ~5 s is worth noting.
 
