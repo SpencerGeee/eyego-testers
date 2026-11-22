@@ -6,9 +6,7 @@ set -euo pipefail
 : "${UDID:?UDID missing}" "${APP_ID:?APP_ID missing}"
 size() {
   W=$(cat "${RUNNER_TEMP:-/tmp}/width_points" 2>/dev/null || echo 390)
-  H=$(python3 -c "import glob,os;from PIL import Image
-f=sorted(glob.glob('results/**/*.png',recursive=True),key=os.path.getmtime)
-print(Image.open(f[-1]).size[1] if f else 844)" 2>/dev/null || echo 844)
+  H=$(cat "${RUNNER_TEMP:-/tmp}/height_points" 2>/dev/null || echo 844)
 }
 case "${1:-}" in
   tap) axe tap -x "$2" -y "$3" --udid "$UDID" ;;

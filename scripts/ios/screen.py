@@ -54,6 +54,7 @@ else:
     wpt = img.size[0] // 3
 scale = img.size[0] / wpt
 hpt = img.size[1] / scale
+(memo.parent / "height_points").write_text(str(round(hpt)))  # gesture.sh: per-device height
 img.resize((round(img.size[0] / scale), round(hpt))).save(out / f"{nn}.png")
 raw.unlink()
 print(f"screenshot: {out}/{nn}.png ({wpt}x{round(hpt)} points; positions on the image = positions to tap)")
