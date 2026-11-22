@@ -21,17 +21,23 @@ on:
       ref:
         description: EyeGo-V2 branch or SHA to test
         default: main
+      apps_from_run:
+        description: Reuse both apps from this earlier run id (skips the ~35 min build). Empty = build.
+        default: ''
 
 jobs:
   build-rider:
+    if: inputs.apps_from_run == ''
     uses: SpencerGeee/EyeGo-V2/.github/workflows/ios-sideload.yml@main
     with: { app: rider, sdk: iphonesimulator, ref: "${{ inputs.ref }}" }
   build-driver:
+    if: inputs.apps_from_run == ''
     uses: SpencerGeee/EyeGo-V2/.github/workflows/ios-sideload.yml@main
     with: { app: driver, sdk: iphonesimulator, ref: "${{ inputs.ref }}" }
 
   test:
     needs: [build-rider, build-driver]
+    if: ${{ !cancelled() && !failure() }}   # runs when the builds are skipped too
     runs-on: macos-15
     timeout-minutes: 240
     env:
@@ -42,7 +48,11 @@ jobs:
       - uses: actions/checkout@v4
         with: { repository: SpencerGeee/EyeGo-V2, ref: "${{ inputs.ref }}", path: eyego }
       - uses: actions/download-artifact@v4
-        with: { pattern: "*-sim-app", path: dl }
+        with:
+          pattern: "*-sim-app"
+          path: dl
+          run-id: ${{ inputs.apps_from_run || github.run_id }}
+          github-token: ${{ github.token }}
       - name: Unzip apps
         run: for a in rider driver; do mkdir -p app/$a && unzip -q dl/$a-sim-app/$a-sim.zip -d app/$a; done
       - uses: actions/setup-node@v4
