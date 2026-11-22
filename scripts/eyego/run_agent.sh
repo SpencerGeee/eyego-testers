@@ -17,10 +17,9 @@ boot() {  # boot <who> <model> <lat,lng>
   for k in DidShowContinuousPathIntroduction KeyboardDidShowProductivityTutorial DidShowGestureKeyboardIntroduction; do
     d com.apple.Preferences $k -bool YES; d com.apple.keyboard.preferences $k -bool YES
   done
-  # Rider: Reduce Motion ON. The full-motion onboarding crashes on its first
-  # slide change (finding #1, 2026-11-22); this takes the app's reduced path so
-  # the rest of the app can be tested. Set REDUCE_MOTION_RIDER=0 to test the fix.
-  [ "$who" = rider ] && [ "${REDUCE_MOTION_RIDER:-1}" = 1 ] && d com.apple.Accessibility ReduceMotionEnabled -bool YES
+  # Optional Reduce Motion on the rider (REDUCE_MOTION_RIDER=1), e.g. to test the
+  # reduced-motion paths. Off by default: the real app runs full motion.
+  [ "$who" = rider ] && [ "${REDUCE_MOTION_RIDER:-0}" = 1 ] && d com.apple.Accessibility ReduceMotionEnabled -bool YES
   xcrun simctl shutdown "$udid" && xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
   local app signed; app=$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)
   # The build is unsigned; an unsigned simulator app gets no Keychain (SecureStore
