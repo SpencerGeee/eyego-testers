@@ -75,6 +75,7 @@ jobs:
       - name: Seed driver
         run: node scripts/eyego/seed.mjs
       - name: Agent
+        timeout-minutes: ${{ inputs.run == 'smoke' && 12 || 225 }}
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

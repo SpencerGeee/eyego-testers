@@ -18,16 +18,29 @@ boot() {  # boot <who> <model> <lat,lng>
     d com.apple.Preferences $k -bool YES; d com.apple.keyboard.preferences $k -bool YES
   done
   xcrun simctl shutdown "$udid" && xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
-  local app; app=$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)
+  local app signed; app=$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)
   # The build is unsigned; an unsigned simulator app gets no Keychain (SecureStore
-  # fails with -34018, so every relaunch looks signed out). Ad-hoc sign it.
-  codesign --force --deep --sign - "$app" >/dev/null 2>&1 || echo "codesign $who failed"
-  xcrun simctl install "$udid" "$app" || { echo "install $who failed"; exit 1; }
+  # fails with -34018, so every relaunch looks signed out). Try an ad-hoc signed
+  # copy first; if it will not launch, fall back to the unsigned original.
+  signed="$EYEGO_TMP/signed-$who/$(basename "$app")"
+  mkdir -p "$(dirname "$signed")" && cp -R "$app" "$signed"
+  codesign --force --deep --sign - "$signed" >/dev/null 2>&1 || echo "codesign $who failed"
   # App + RN + worklets logs: the JS error behind any crash lands here.
   xcrun simctl spawn "$udid" log stream --style compact --level debug \
     --predicate 'processImagePath CONTAINS "EyeGo"' > "results/$RUN/$who-syslog.txt" 2>&1 &
   bash scripts/eyego/phone.sh "$who" gps "$3"
-  xcrun simctl launch "$udid" "com.eyego.$who"
+  xcrun simctl install "$udid" "$signed" || { echo "install $who failed"; exit 1; }
+  if launch "$udid" "com.eyego.$who"; then echo "$who: ad-hoc signed build launched" | tee -a "results/$RUN/launch.txt"
+  else
+    echo "$who: signed build did not launch in 30 s -> unsigned original" | tee -a "results/$RUN/launch.txt"
+    xcrun simctl uninstall "$udid" "com.eyego.$who"; xcrun simctl install "$udid" "$app"
+    launch "$udid" "com.eyego.$who" || echo "$who: unsigned launch also timed out" | tee -a "results/$RUN/launch.txt"
+  fi
+}
+launch() {  # simctl launch with a 30 s limit (it can hang forever)
+  xcrun simctl launch "$1" "$2" & local p=$!
+  for _ in $(seq 1 30); do kill -0 "$p" 2>/dev/null || { wait "$p"; return; }; sleep 1; done
+  kill "$p" 2>/dev/null; return 1
 }
 # Accra. Rider at Accra Mall, driver ~1.2 km away on the Spintex road side.
 boot rider "iPhone SE (3rd generation)" 5.6220,-0.1735
