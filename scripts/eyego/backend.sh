@@ -40,6 +40,9 @@ CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-placeholder}
 DRIVER_REQUIRED_WALLET_TO_GO_ONLINE=0
 DRIVER_REQUIRED_WALLET_TO_GO_ONLINE_PESEWAS=0
 EOF
+# Missing secrets arrive as EMPTY env vars, and dotenv never overrides an existing
+# var, so the .env placeholders would be ignored. .env is the only source from here.
+unset MAPBOX_SECRET_TOKEN MAPBOX_PUBLIC_TOKEN CLOUDINARY_CLOUD_NAME CLOUDINARY_API_KEY CLOUDINARY_API_SECRET
 npm ci --no-audit --no-fund >/dev/null 2>&1   # postinstall = prisma generate
 npx prisma migrate deploy >/dev/null
 nohup npm start > "$GITHUB_WORKSPACE/$RUN_DIR/api.log" 2>&1 &
