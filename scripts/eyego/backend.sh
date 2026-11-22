@@ -9,7 +9,8 @@ mkdir -p "$RUN_DIR"
 brew install -q postgresql@17 redis >/dev/null
 brew services start postgresql@17 >/dev/null
 brew services start redis >/dev/null
-export PATH="$(brew --prefix postgresql@17)/bin:$PATH"
+PG_BIN="$(brew --prefix postgresql@17)/bin"
+export PATH="$PG_BIN:$PATH"
 for _ in $(seq 1 30); do pg_isready -q && break; sleep 1; done
 createdb eyego
 

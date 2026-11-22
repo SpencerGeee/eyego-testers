@@ -11,7 +11,7 @@ set -euo pipefail
 WHO=${1:?rider or driver}; shift
 case "$WHO" in rider) export APP_ID=com.eyego.rider ;; driver) export APP_ID=com.eyego.driver ;; *) echo "first arg: rider or driver"; exit 2 ;; esac
 BASE_TMP=${EYEGO_TMP:?}
-export UDID=$(cat "$BASE_TMP/udid_$WHO")
+UDID=$(cat "$BASE_TMP/udid_$WHO"); export UDID
 export RUNNER_TEMP="$BASE_TMP/$WHO"   # per-phone screen-size memo
 mkdir -p "$RUNNER_TEMP"
 LAST="$RUNNER_TEMP/last_gps"
