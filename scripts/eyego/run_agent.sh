@@ -21,33 +21,14 @@ boot() {  # boot <who> <model> <lat,lng>
   # reduced-motion paths. Off by default: the real app runs full motion.
   [ "$who" = rider ] && [ "${REDUCE_MOTION_RIDER:-0}" = 1 ] && d com.apple.Accessibility ReduceMotionEnabled -bool YES
   xcrun simctl shutdown "$udid" && xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
-  local app signed; app=$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)
-  # The build is unsigned; an unsigned simulator app gets no Keychain (SecureStore
-  # fails with -34018, so every relaunch looks signed out). Try an ad-hoc signed
-  # copy first; if it will not launch, fall back to the unsigned original.
-  signed="$EYEGO_TMP/signed-$who/$(basename "$app")"
-  mkdir -p "$(dirname "$signed")" && cp -R "$app" "$signed"
-  codesign --force --deep --sign - "$signed" >/dev/null 2>&1 || echo "codesign $who failed"
-  # App + RN + worklets logs: the JS error behind any crash lands here.
+  # Unsigned build (ad-hoc signing hung simctl launch in 3 of 4 runs): no Keychain
+  # on the simulator, so SecureStore cannot persist a session across relaunches.
+  xcrun simctl install "$udid" "$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)" || { echo "install $who failed"; exit 1; }
+  # App + RN + worklets logs.
   xcrun simctl spawn "$udid" log stream --style compact --level debug \
     --predicate 'processImagePath CONTAINS "EyeGo"' > "results/$RUN/$who-syslog.txt" 2>&1 &
   bash scripts/eyego/phone.sh "$who" gps "$3"
-  xcrun simctl install "$udid" "$signed" || { echo "install $who failed"; exit 1; }
-  if launch "$udid" "com.eyego.$who"; then echo "$who: ad-hoc signed build launched" | tee -a "results/$RUN/launch.txt"
-  else
-    echo "$who: signed build did not launch in 60 s -> unsigned original" | tee -a "results/$RUN/launch.txt"
-    xcrun simctl uninstall "$udid" "com.eyego.$who"; xcrun simctl install "$udid" "$app"
-    launch "$udid" "com.eyego.$who" || echo "$who: unsigned launch also timed out" | tee -a "results/$RUN/launch.txt"
-  fi
-}
-launch() {  # simctl launch with a 60 s limit (it can hang forever)
-  # The app's stdout/stderr go to results/: an uncaught JS error in a worklet is
-  # printed there as "terminating due to uncaught exception ... JSError: <message>"
-  # before the abort, which the .ips crash report never contains.
-  local who=${2##*.}
-  xcrun simctl launch --stdout="$PWD/results/$RUN/$who-stdout-$(date +%H%M%S).txt" --stderr="$PWD/results/$RUN/$who-stderr-$(date +%H%M%S).txt" "$1" "$2" & local p=$!
-  for _ in $(seq 1 60); do kill -0 "$p" 2>/dev/null || { wait "$p"; return; }; sleep 1; done
-  kill "$p" 2>/dev/null; return 1
+  bash scripts/eyego/phone.sh "$who" relaunch | tee -a "results/$RUN/launch.txt"
 }
 # Accra. Rider at Accra Mall, driver ~1.2 km away on the Spintex road side.
 boot rider "iPhone SE (3rd generation)" 5.6220,-0.1735
@@ -64,15 +45,14 @@ collect_crashes() {
 # smoke: launch both apps, look, collect logs. No agent, no Claude usage.
 if [ "$RUN" = smoke ]; then
   sleep 50
-  # Rider: page through the onboarding by hand (Reduce Motion = no autoplay).
+  # Rider: page through the onboarding by hand, then check it is still alive.
   for _ in 1 2 3 4 5; do bash scripts/eyego/phone.sh rider swipe 330 330 40 330 >/dev/null 2>&1; sleep 3; done
-  xcrun simctl spawn "$(cat "$EYEGO_TMP/udid_rider")" launchctl list | grep -q com.eyego.rider \
-    && echo "rider: alive after paging the onboarding" | tee -a "results/$RUN/launch.txt" \
-    || echo "rider: DEAD after paging the onboarding" | tee -a "results/$RUN/launch.txt"
   for w in rider driver; do
+    xcrun simctl spawn "$(cat "$EYEGO_TMP/udid_$w")" launchctl list | grep -q "com.eyego.$w" \
+      && echo "$w: alive after ~70 s" | tee -a "results/$RUN/launch.txt" \
+      || echo "$w: DEAD after ~70 s" | tee -a "results/$RUN/launch.txt"
     bash scripts/eyego/phone.sh $w screen 01 >/dev/null 2>&1 || echo "screen $w 01 failed"
-    u=$(cat "$EYEGO_TMP/udid_$w"); xcrun simctl terminate "$u" "com.eyego.$w" 2>/dev/null
-    launch "$u" "com.eyego.$w" || echo "$w relaunch timed out"; sleep 20
+    bash scripts/eyego/phone.sh $w relaunch | tee -a "results/$RUN/launch.txt"; sleep 15
     bash scripts/eyego/phone.sh $w screen 02 >/dev/null 2>&1 || echo "screen $w 02 failed"
   done
   collect_crashes; exit 0

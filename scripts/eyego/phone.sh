@@ -24,5 +24,18 @@ case "$cmd" in
          xcrun simctl location "$UDID" start --speed="${2:-12}" "$from" "$1"; echo "$1" > "$LAST"; echo "driving $from -> $1" ;;
   theme) xcrun simctl ui "$UDID" appearance "$1"; echo "theme: $1" ;;
   textsize) xcrun simctl ui "$UDID" content_size "$1"; echo "text size: $1" ;;
+  open|relaunch)
+    running() { xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "$APP_ID"; }
+    if [ "$cmd" = open ] && running; then bash scripts/ios/gesture.sh open; exit; fi
+    xcrun simctl terminate "$UDID" "$APP_ID" >/dev/null 2>&1 || true
+    # Launch with the app's stdout/stderr captured for its whole life: an uncaught
+    # JS error in a worklet prints "terminating ... JSError: <message>" + the JS
+    # stack there before the abort (the .ips crash report never has it).
+    # `simctl launch --stderr` streams until the app exits, so it stays in the background.
+    ts=$(date +%H%M%S)
+    nohup xcrun simctl launch --stdout="$PWD/results/$RUN/$WHO-stdout-$ts.txt" --stderr="$PWD/results/$RUN/$WHO-stderr-$ts.txt" \
+      "$UDID" "$APP_ID" >/dev/null 2>&1 &
+    for _ in $(seq 1 60); do running && { sleep 3; echo "done: $cmd"; exit 0; }; sleep 1; done
+    echo "WARNING: the app did not start within 60 s"; exit 1 ;;
   *) bash scripts/ios/gesture.sh "$cmd" "$@" ;;
 esac

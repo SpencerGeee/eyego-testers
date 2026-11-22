@@ -47,6 +47,10 @@ Number screenshots per phone in order (01, 02...). Read every screenshot before 
   account in this build, so the upload itself fails. Do not report that. **Do** report how the app
   handles it: a clear error and a way to continue = fine; a spinner forever, a silent "saved", a
   crash, or a form that cannot be submitted without the photo = bug.
+- The test build is unsigned, so the iOS Keychain does not work: **after a `relaunch` the apps
+  forget the session and the onboarding**. Do not report "signed out after relaunch"; sign in
+  again (the OTP is on screen). Everything else about a relaunch (which screen, live trip
+  restored after sign-in, data shown) is still under test.
 - No real SMS and no push notifications (simulator). In-app banners and screens still must update.
 - Backend is a fresh local server; it is fast. Slowness of more than ~5 s is worth noting.
 
