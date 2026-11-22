@@ -31,8 +31,11 @@ boot() {  # boot <who> <model> <lat,lng>
   bash scripts/eyego/phone.sh "$who" relaunch | tee -a "results/$RUN/launch.txt"
 }
 # Accra. Rider at Accra Mall, driver ~1.2 km away on the Spintex road side.
-boot rider "iPhone SE (3rd generation)" 5.6220,-0.1735
-boot driver "iPhone 16 Pro" 5.6150,-0.1650
+# Both at once: a fresh simulator takes ~8 min to boot twice on the runner.
+boot rider "iPhone SE (3rd generation)" 5.6220,-0.1735 & r=$!
+boot driver "iPhone 16 Pro" 5.6150,-0.1650 & d=$!
+wait "$r" "$d"   # only the two boots (their log streams keep running)
+echo "both phones up at $(date +%T)"
 sleep 10
 for w in rider driver; do bash scripts/eyego/phone.sh $w screen 00 >/dev/null 2>&1 || true; done  # size memos
 
