@@ -28,13 +28,12 @@ boot() {  # boot <who> <model> <lat,lng>
   # A fresh sim's Spotlight/Siri/analysis daemons crash-loop (TypeToSiriWidgetExtension,
   # searchd); every crash wakes ReportCrash + spindump: load average 800, a 19-min
   # launch (smoke 45154229227). None of them matter to the apps under test.
-  local n=0 l
+  local l
   for l in $(xcrun simctl spawn "$udid" launchctl list 2>/dev/null | awk '{print $3}' |
              grep -Ei 'searchd|spotlight|siri|assistant|suggest|duetexpert|photoanalysis|mediaanalysis|spindump|ReportCrash|knowledge|biome|intelligence'); do
-    xcrun simctl spawn "$udid" launchctl disable "system/$l" >/dev/null 2>&1
-    xcrun simctl spawn "$udid" launchctl bootout "system/$l" >/dev/null 2>&1 && n=$((n + 1))
+    xcrun simctl spawn "$udid" launchctl bootout "system/$l" >/dev/null 2>&1 &   # background: each spawn costs seconds under load
   done
-  echo "$who: booted $(date +%T), $n background daemons stopped, load $(sysctl -n vm.loadavg)"
+  echo "$who: booted $(date +%T), load $(sysctl -n vm.loadavg)"
   # Unsigned build (ad-hoc signing hung simctl launch in 3 of 4 runs): no Keychain
   # on the simulator, so SecureStore cannot persist a session across relaunches.
   xcrun simctl install "$udid" "$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)" || { echo "install $who failed"; exit 1; }
