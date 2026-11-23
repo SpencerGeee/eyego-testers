@@ -2,7 +2,7 @@
 // the agent signs in on the driver phone and lands ready to go online.
 // The rider signs up in the app itself. Same calls as EyeGo's scripts/e2e/lib.mjs.
 const API = 'http://localhost:5020/v1';
-const DRIVER_PHONE = '233240000001';
+const DRIVER_PHONE = '+233240000001'; // the app sends +233… (a bare 233… is a different account)
 
 async function call(method, path, body, token) {
   const res = await fetch(API + path, {

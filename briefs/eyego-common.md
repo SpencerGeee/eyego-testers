@@ -30,7 +30,7 @@ Number screenshots per phone in order (01, 02...). Read every screenshot before 
 
 ## Accounts and places
 - **Driver** is seeded and approved: sign in with phone `240000001` (country code 233 is fixed in
-  the app). The OTP is shown on the OTP screen in this test build. Vehicle: white Toyota HiAce, 14 seats.
+  the app). The OTP is shown on the OTP screen in this test build. Vehicle: white Toyota HiAce, 14 seats, Economy tier. Its sign-in lands on Home ready to go online; if it asks for a profile or vehicle, that is a bug.
 - **Rider**: sign up in the app with phone `200000001`, name `Ama Owusu`. Sign-up itself is not
   under test: do it quickly, but still report anything broken you see on the way.
 - Rider starts at Accra Mall (5.6220,-0.1735). Driver starts ~1.2 km away (5.6150,-0.1650).
