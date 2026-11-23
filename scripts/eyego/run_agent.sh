@@ -6,11 +6,14 @@ mkdir -p "results/$RUN/rider" "results/$RUN/driver"
 defaults write com.apple.iphonesimulator ConnectHardwareKeyboard -bool false
 
 boot() {  # boot <who> <model> <lat,lng>
-  local who=$1 udid
+  local who=$1 udid prefs
   udid=$(python3 scripts/ios/create_sim.py "$2" 18 | grep '^UDID=' | cut -d= -f2)
   echo "$udid" > "$EYEGO_TMP/udid_$who"
-  xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
-  d() { xcrun simctl spawn "$udid" defaults write "$@"; }
+  # Prefs go into the device's plists BEFORE its first boot: no second reboot
+  # (each boot of a fresh sim costs minutes on the 3-core runner).
+  prefs=~/Library/Developer/CoreSimulator/Devices/$udid/data/Library/Preferences
+  mkdir -p "$prefs"
+  d() { local f=$1; shift; [ "$f" = -g ] && f=.GlobalPreferences; defaults write "$prefs/$f" "$@"; }
   d -g AppleLanguages -array en-GH en; d -g AppleLocale -string en_GH
   d -g AppleKeyboards -array "en_US@sw=QWERTY;hw=US"
   for k in KeyboardAutocapitalization KeyboardAutocorrection KeyboardPrediction KeyboardCheckSpelling; do d com.apple.Preferences $k -bool NO; done
@@ -20,22 +23,25 @@ boot() {  # boot <who> <model> <lat,lng>
   # Optional Reduce Motion on the rider (REDUCE_MOTION_RIDER=1), e.g. to test the
   # reduced-motion paths. Off by default: the real app runs full motion.
   [ "$who" = rider ] && [ "${REDUCE_MOTION_RIDER:-0}" = 1 ] && d com.apple.Accessibility ReduceMotionEnabled -bool YES
-  xcrun simctl shutdown "$udid" && xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
+  echo "$who: created $(date +%T)"
+  xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
+  echo "$who: booted $(date +%T)"
   # Unsigned build (ad-hoc signing hung simctl launch in 3 of 4 runs): no Keychain
   # on the simulator, so SecureStore cannot persist a session across relaunches.
   xcrun simctl install "$udid" "$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)" || { echo "install $who failed"; exit 1; }
-  # App + RN + worklets logs.
-  xcrun simctl spawn "$udid" log stream --style compact --level debug \
-    --predicate 'processImagePath CONTAINS "EyeGo"' > "results/$RUN/$who-syslog.txt" 2>&1 &
+  echo "$who: installed $(date +%T)"
+  # No log stream: --level debug meant two CPU-bound streams (100 MB each) on a
+  # 3-core runner. JS crashes land in the stderr capture of every launch.
   bash scripts/eyego/phone.sh "$who" gps "$3"
   bash scripts/eyego/phone.sh "$who" relaunch | tee -a "results/$RUN/launch.txt"
+  echo "$who: launched $(date +%T)"
 }
 # Accra. Rider at Accra Mall, driver ~1.2 km away on the Spintex road side.
 # Both at once: a fresh simulator takes ~8 min to boot twice on the runner.
 boot rider "iPhone SE (3rd generation)" 5.6220,-0.1735 & r=$!
 boot driver "iPhone 16 Pro" 5.6150,-0.1650 & d=$!
-wait "$r" "$d"   # only the two boots (their log streams keep running)
-echo "both phones up at $(date +%T)"
+wait "$r" "$d"
+echo "both phones up at $(date +%T)"; sysctl -n vm.swapusage; memory_pressure | tail -1
 sleep 10
 for w in rider driver; do bash scripts/eyego/phone.sh $w screen 00 >/dev/null 2>&1 || true; done  # size memos
 
@@ -67,9 +73,9 @@ if [ "$RUN" = smoke ]; then
     done
     uptime; top -l 2 -n 6 -o cpu -stats command,cpu,mem | tail -7
   }
-  bench "with-logstream" | tee -a "results/$RUN/launch.txt"
-  pkill -f "log stream" || true; sleep 20
-  bench "no-logstream" | tee -a "results/$RUN/launch.txt"
+  bench "first" | tee -a "results/$RUN/launch.txt"
+  sleep 60
+  bench "after-60s" | tee -a "results/$RUN/launch.txt"
   collect_crashes; exit 0
 fi
 
