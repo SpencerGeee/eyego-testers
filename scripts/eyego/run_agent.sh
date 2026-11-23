@@ -25,7 +25,16 @@ boot() {  # boot <who> <model> <lat,lng>
   [ "$who" = rider ] && [ "${REDUCE_MOTION_RIDER:-0}" = 1 ] && d com.apple.Accessibility ReduceMotionEnabled -bool YES
   echo "$who: created $(date +%T)"
   xcrun simctl boot "$udid" && xcrun simctl bootstatus "$udid" -b >/dev/null
-  echo "$who: booted $(date +%T)"
+  # A fresh sim's Spotlight/Siri/analysis daemons crash-loop (TypeToSiriWidgetExtension,
+  # searchd); every crash wakes ReportCrash + spindump: load average 800, a 19-min
+  # launch (smoke 45154229227). None of them matter to the apps under test.
+  local n=0 l
+  for l in $(xcrun simctl spawn "$udid" launchctl list 2>/dev/null | awk '{print $3}' |
+             grep -Ei 'searchd|spotlight|siri|assistant|suggest|duetexpert|photoanalysis|mediaanalysis|spindump|ReportCrash|knowledge|biome|intelligence'); do
+    xcrun simctl spawn "$udid" launchctl disable "system/$l" >/dev/null 2>&1
+    xcrun simctl spawn "$udid" launchctl bootout "system/$l" >/dev/null 2>&1 && n=$((n + 1))
+  done
+  echo "$who: booted $(date +%T), $n background daemons stopped, load $(sysctl -n vm.loadavg)"
   # Unsigned build (ad-hoc signing hung simctl launch in 3 of 4 runs): no Keychain
   # on the simulator, so SecureStore cannot persist a session across relaunches.
   xcrun simctl install "$udid" "$(find "app/$who" -maxdepth 2 -name '*.app' -type d | head -1)" || { echo "install $who failed"; exit 1; }
@@ -38,6 +47,7 @@ boot() {  # boot <who> <model> <lat,lng>
 }
 # Accra. Rider at Accra Mall, driver ~1.2 km away on the Spintex road side.
 # Both at once: a fresh simulator takes ~8 min to boot twice on the runner.
+sudo mdutil -a -i off >/dev/null 2>&1 || true   # host Spotlight indexing every new sim file
 boot rider "iPhone SE (3rd generation)" 5.6220,-0.1735 & r=$!
 boot driver "iPhone 16 Pro" 5.6150,-0.1650 & d=$!
 wait "$r" "$d"

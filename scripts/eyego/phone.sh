@@ -27,7 +27,7 @@ case "$cmd" in
   open|relaunch)
     running() { xcrun simctl spawn "$UDID" launchctl list 2>/dev/null | grep -q "$APP_ID"; }
     if [ "$cmd" = open ] && running; then bash scripts/ios/gesture.sh open; exit; fi
-    xcrun simctl terminate "$UDID" "$APP_ID" >/dev/null 2>&1 || true
+    running && { xcrun simctl terminate "$UDID" "$APP_ID" >/dev/null 2>&1 || true; }
     # Launch with the app's stdout/stderr captured for its whole life: an uncaught
     # JS error in a worklet prints "terminating ... JSError: <message>" + the JS
     # stack there before the abort (the .ips crash report never has it).
