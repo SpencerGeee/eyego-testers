@@ -14,7 +14,7 @@ through payment, rating and history. Check every control on each screen you pass
 3. **Choose your ride.** Every tier/option card: price, ETA, seats, what greys out and why. Open
    each detail. Change party size if offered and check the price changes sensibly. Payment picker
    on this screen: cash, wallet, MoMo, card.
-4. **Request and dispatch.** Request **Economy** with cash (the seeded HiAce is an Economy vehicle; a Comfort or Premium request is not offered to it, which is correct). Rider: the searching state (cancel button present?
+4. **Request and dispatch.** Request **Economy** with cash (the seeded HiAce is an Economy vehicle; a Comfort or Premium request is not offered to it, which is correct). Rider: the searching state (cancel button present? **Speed matters here: an offer is live for 2 minutes and each phone command takes 10-60 s. When the request appears on the driver, tap it, take ONE screen, tap Accept. Look the offer over only after accepting (or on the second ride).**
    time shown?). Driver: the offer must appear: check pickup, destination, fare, distance, the
    countdown and both buttons. Accept.
 5. **En route.** Drive the driver toward the rider at ~12 m/s. Rider: driver name, photo, plate,

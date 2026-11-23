@@ -39,6 +39,11 @@ CLOUDINARY_API_KEY=${CLOUDINARY_API_KEY:-placeholder}
 CLOUDINARY_API_SECRET=${CLOUDINARY_API_SECRET:-placeholder}
 DRIVER_REQUIRED_WALLET_TO_GO_ONLINE=0
 DRIVER_REQUIRED_WALLET_TO_GO_ONLINE_PESEWAS=0
+# The agent needs 30-120 s per phone action; the real 45 s offer countdown and
+# 5-min search lapse before it can tap Accept (run 45194827633). Max allowed values.
+DISPATCH_OFFER_TTL_SECONDS=120
+DISPATCH_OFFER_ACK_GRACE_SECONDS=60
+DISPATCH_SEARCH_TIMEOUT_SECONDS=900
 EOF
 # Missing secrets arrive as EMPTY env vars, and dotenv never overrides an existing
 # var, so the .env placeholders would be ignored. .env is the only source from here.

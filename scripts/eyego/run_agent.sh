@@ -88,6 +88,13 @@ if [ "$RUN" = smoke ]; then
   collect_crashes; exit 0
 fi
 
+# Runner health every 5 min: run 45194827633 went from ~10 s to 50-120 s per phone
+# command after ~1 h, with nothing on record to say why.
+( while :; do
+    { date +%T; sysctl -n vm.loadavg vm.swapusage; memory_pressure | tail -1
+      top -l 1 -n 8 -o mem -stats command,cpu,mem | tail -9; echo; } >> "results/$RUN/load.txt" 2>&1
+    sleep 300
+  done ) &
 claude -p "Read briefs/eyego-common.md, then briefs/eyego-$RUN.md, and do the whole mission. RUN=$RUN. Both simulators are booted and both apps are open. Use only scripts/eyego/phone.sh." \
   --model "${MODEL:-opus}" --max-turns 1500 --output-format json \
   --allowedTools "Bash(bash scripts/eyego/phone.sh:*),Bash(sleep:*),Bash(ls:*),Bash(cat:*),Read,Write,Edit" \
