@@ -58,6 +58,18 @@ if [ "$RUN" = smoke ]; then
     bash scripts/eyego/phone.sh $w relaunch | tee -a "results/$RUN/launch.txt"; sleep 15
     bash scripts/eyego/phone.sh $w screen 02 >/dev/null 2>&1 || echo "screen $w 02 failed"
   done
+  # Speed bench: core-ride saw 2-20 min per agent screenshot. Time each tool piece.
+  t() { local s; s=$(date +%s); "$@" >/dev/null 2>&1; echo "$(( $(date +%s) - s ))s"; }
+  bench() {
+    for w in rider driver; do
+      u=$(cat "$EYEGO_TMP/udid_$w")
+      echo "$1 $w: screen $(t bash scripts/eyego/phone.sh $w screen 90) | shot $(t xcrun simctl io "$u" screenshot /tmp/b.png) | describe $(t axe describe-ui --udid "$u") | tap $(t axe tap -x 5 -y 5 --udid "$u") | launchctl $(t xcrun simctl spawn "$u" launchctl list)"
+    done
+    uptime; top -l 2 -n 6 -o cpu -stats command,cpu,mem | tail -7
+  }
+  bench "with-logstream" | tee -a "results/$RUN/launch.txt"
+  pkill -f "log stream" || true; sleep 20
+  bench "no-logstream" | tee -a "results/$RUN/launch.txt"
   collect_crashes; exit 0
 fi
 
