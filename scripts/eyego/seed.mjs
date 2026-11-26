@@ -23,4 +23,14 @@ await call('POST', '/driver/verify', {
   vehicle: { make: 'Toyota', model: 'HiAce', year: 2020, colour: 'White', plateNumber: 'GT-4821-24', seaterCount: 14, tier: 'ECO' },
 }, accessToken);
 await call('POST', '/driver/dev-activate', {}, accessToken);
+// Cash rides need the commission float in the wallet, or every accept is a 402
+// and the run burns 30+ min on re-offers (run 45838978641 finding #2).
+// PAYMENT_PROVIDER=mock auto-accepts MoMo. Non-fatal: the agent can top up by hand.
+try {
+  await call('POST', '/driver/wallet/topup', { amountPesewas: 20000, method: 'MOMO_MTN' }, accessToken);
+  const bal = await call('GET', '/driver/wallet/balance', null, accessToken);
+  console.log('Seed driver wallet:', JSON.stringify(bal).slice(0, 120));
+} catch (e) {
+  console.log('Seed driver top-up failed (agent must top up in-app):', e.message);
+}
 console.log(`Seeded ACTIVE driver ${DRIVER_PHONE}`);
