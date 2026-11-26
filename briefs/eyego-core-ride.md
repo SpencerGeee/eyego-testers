@@ -38,9 +38,10 @@ pick a destination, Economy), then spend the time on 4-12, which have never been
    Driver: rate the passenger, earnings card updated by the right amount, commission shown.
 10. **History.** Rider Activity/Trips and trip detail; driver Trips tab and trip detail. Same
     pickup, destination, fare, time, driver/rider on both. Notifications tabs on both.
-11. **Second ride, different payment.** Book again paying with wallet (and MoMo if wallet is empty:
-    top up through MoMo first if the app offers it). Complete it quickly. Check the wallet balance
-    moves by exactly the fare on the rider and the driver earnings move accordingly.
+11. **Second ride + wallet.** On-demand rides are cash-only by design today (not a finding). Top the
+    rider wallet up through MoMo (mock auto-accepts) and check the balance moves by exactly the
+    amount. Book and complete a second cash ride quickly; check the driver earnings and the
+    commission move by the right amounts across both rides.
 12. **Relaunch persistence.** `relaunch` both apps at Home: still signed in, driver still
     online (or clearly offline with a reason), last trip in history.
 
