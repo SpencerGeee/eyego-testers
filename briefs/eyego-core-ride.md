@@ -3,6 +3,12 @@
 Goal: prove a rider can book, a driver can take it, and both phones agree at every step,
 through payment, rating and history. Check every control on each screen you pass.
 
+**Already covered by the previous run — do NOT re-test or re-report:** sign-up details, the
+where-to search tests, the Choose-your-ride layout on the SE, seat/doorstep pricing, the missing
+payment picker, the terms gate, the DOB wheel, Create Trip under the tab bar, driver document
+status. For scenarios 1-3 do only what is needed to get a ride requested (sign in/up, go online,
+pick a destination, Economy), then spend the time on 4-12, which have never been reached.
+
 ## Scenarios (in order, update progress.md as you go)
 1. **Setup.** Driver: sign in, look at Home before going online (empty states, earnings card,
    quests, notifications tab). Go online; confirm the UI clearly shows online. Rider: sign up.

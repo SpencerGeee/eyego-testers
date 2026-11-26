@@ -23,7 +23,7 @@ case "$cmd" in
   gps) xcrun simctl location "$UDID" set "$1"; echo "$1" > "$LAST"; echo "gps: $1" ;;
   drive) from=$(cat "$LAST" 2>/dev/null || echo "$1")
          xcrun simctl location "$UDID" start --speed="${2:-12}" "$from" "$1"; echo "$1" > "$LAST"; echo "driving $from -> $1" ;;
-  arm) nohup python3 scripts/ios/arm.py "${1:?label}" "${2:-300}" "$PWD/results/$RUN/$WHO-arm.txt" >/dev/null 2>&1 &
+  arm) WHO="$WHO" nohup python3 scripts/ios/arm.py "${1:?label}" "${2:-300}" "$PWD/results/$RUN/$WHO-arm.txt" >/dev/null 2>&1 &
        echo "armed '$1' on $WHO for ${2:-300} s (log: results/$RUN/$WHO-arm.txt)" ;;
   theme) xcrun simctl ui "$UDID" appearance "$1"; echo "theme: $1" ;;
   textsize) xcrun simctl ui "$UDID" content_size "$1"; echo "text size: $1" ;;

@@ -28,18 +28,34 @@ def say(msg):
         fh.write(f"{time.strftime('%H:%M:%S')} {msg}\n")
 
 
+def snap(tag):
+    # What the phone actually showed — run 45814292257 could not tell "card never
+    # drew" from "a11y tree missed it" because nobody looked at the driver screen.
+    out = os.path.join(os.path.dirname(log), os.environ.get("WHO", "phone"), f"arm-{time.strftime('%H%M%S')}-{tag}.png")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    subprocess.run(["xcrun", "simctl", "io", UDID, "screenshot", out], capture_output=True, timeout=60)
+
+
 end = time.time() + secs
 say(f"armed: '{want}' for {int(secs)} s")
+last_snap = 0.0
 while time.time() < end:
+    t0 = time.time()
     try:
         tree = json.loads(subprocess.run(["axe", "describe-ui", "--udid", UDID],
                                          capture_output=True, text=True, timeout=90).stdout)
-    except (json.JSONDecodeError, subprocess.TimeoutExpired):
+    except (json.JSONDecodeError, subprocess.TimeoutExpired) as e:
+        say(f"poll failed after {time.time() - t0:.0f} s: {type(e).__name__}")
         continue
     n = find(tree)
     if not n:
+        say(f"poll {time.time() - t0:.0f} s: not on screen")
+        if time.time() - last_snap > 30:
+            snap("poll")
+            last_snap = time.time()
         time.sleep(2)
         continue
+    snap("found")
     f = n["frame"]
     x, y, w, h = f["x"], f["y"], f["width"], f["height"]
     cy = round(y + h / 2)
