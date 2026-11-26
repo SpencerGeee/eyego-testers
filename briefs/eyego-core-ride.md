@@ -28,8 +28,10 @@ pick a destination, Economy), then spend the time on 4-12, which have never been
    Driver: navigation/next-stop card, rider name, the swipe/advance control.
 6. **Chat both ways.** Rider sends 2 messages, driver replies; check order, timestamps, unread
    badges on both, keyboard covering the input on the iPhone SE.
-7. **Arrive and board.** Driver arrives (drive to the pickup). Rider: "driver arrived" state and the
-   boarding PIN/code. Driver: enter a WRONG PIN first (must be refused clearly), then the right one.
+7. **Arrive and board.** The boarding PIN is opt-in by design (like Uber's): BEFORE the first
+   request in step 4, turn on rider Account → Safety → "Verify my ride". A ride booked with it off
+   has no PIN, which is correct, not a finding. Driver arrives (drive to the pickup). Rider:
+   "driver arrived" state and the boarding PIN/code. Driver: enter a WRONG PIN first (must be refused clearly), then the right one.
    Start the trip.
 8. **In progress.** Drive to the destination. Rider: live trip, ETA to destination, SOS button,
    share/track link (open it if it is a link: what does it show?). Driver: progress, drop-off.
